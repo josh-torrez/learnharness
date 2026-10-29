@@ -114,6 +114,14 @@ const nextConfig: NextConfig = {
 		"@silvia-odwyer/photon-node", // CJS loads its adjacent WASM from disk
 		"@resvg/resvg-js", // native binding — same
 	],
+	experimental: {
+		// Course library uploads (2026-10-29): proxy.ts guards every /api
+		// route, and with a proxy present Next buffers request bodies up to
+		// this limit and SILENTLY TRUNCATES beyond it (default 10MB). The
+		// library accepts files up to 100MB, uploaded one per request; the
+		// headroom covers multipart framing.
+		proxyClientMaxBodySize: "110mb",
+	},
 };
 
 export default nextConfig;
