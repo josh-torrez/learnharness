@@ -244,6 +244,12 @@ flowchart TB
         GRAPHDATA["append-only ledgers — data/graph/*.jsonl"]
     end
 
+    subgraph COURSE["COURSE LIBRARY — learner materials (owns data/library)"]
+        CLSTORE["tree index + copied files — data/library/index.json · files/&lt;id&gt;/ (LibraryStore — sole writer)"]
+        CLIMPORT["import queue — PDF probe · LibreOffice → PDF · OOXML extraction"]
+        CLSUM["summary service — library-reader on the pdf-reader slot, cached by content hash"]
+    end
+
     subgraph ROOM["MACHINE ROOM — host"]
         HOST["Electron main → standalone Next server · config.ts · LH_DATA_DIR · BYOK"]
     end
@@ -264,6 +270,10 @@ flowchart TB
     PPART -->|"reads the graph ONCE at creation — propositions+chains frozen into the set [GraphStore port, pure read]"| GRAPHDATA
     PPART --> PDATA
     UI -->|"GET /api/graph (read) · PUT positions (sanctioned exception) · POST import"| DERIVE
+    UI -->|"/api/library* (upload · tree edits) · PUT /api/chats/[id]/attachments"| CLSTORE
+    CLSTORE --> CLIMPORT
+    TURN -->|"materials gate: await summaries · COURSE MATERIALS manifest · scoped library_* tools [server/library-agent.ts]"| CLSUM
+    JOBRUN -->|"library_brief = pdf job with fileId → library-reader [runner libraryFile seam]"| CLSTORE
     HOST -.->|"hosts every server-side system"| TURN
 ```
 
@@ -402,6 +412,20 @@ Practice turns the graph into problem sets the learner reasons through out loud.
 
 ---
 
+## 7a. The course library — learner materials chats attach (owner-approved plan 2026-10-29)
+
+A shared library of the learner's course files (PDF, DOCX, PPTX, JPG/PNG/GIF/WEBP; 100 MB per file; legacy `.doc`/`.ppt` and HEIC refused with a specific message) that chats **attach**. Owner rulings: one shared library (not per-chat); files are **copied in**; folders nest freely and any folder or file carries an **optional tag** — Lecture, Quiz, Practice Test, Answer Key, Homework, Notes, Syllabus (untagged = reference) — that files **inherit** from the nearest tagged ancestor unless they carry their own.
+
+**Store.** `src/store/library.ts` (`LibraryStore` port) is the sole writer of `data/library/`: `index.json` (the tree, schema-stamped, tmp+rename writes, newer-stamp refusal like chats) and `files/<id>/` holding `original.<ext>` plus derived `converted.pdf`, `extracted.json`, `summary.json`. Tree integrity (parents are folders, no move into one's own subtree) is enforced in the store. Pure folds live in `src/core/contracts/library.ts` (`effectiveTag`, `resolveAttachmentFiles`, `classifyUpload`, …) and serve the server and the UI alike.
+
+**Import.** `src/server/library.ts` runs a serialized `globalThis` queue: PDFs are probed for page count; images are content-sniffed; Office files convert to PDF via LibreOffice when it is installed (per-run throwaway profile) and otherwise — or when conversion fails — go through the in-app OOXML extractor (fflate unzip + a tag tokenizer: slide/section text, speaker notes, tables, Office Math with delimiters, embedded-picture references read back from the original on demand). Failures mark the file `failed` with the reason; it stays listed. Uploads are one file per request because `proxy.ts` makes Next buffer request bodies (`experimental.proxyClientMaxBodySize` is raised to 110 MB — the default 10 MB silently truncates).
+
+**Chats.** `ChatRecord.attachments` (ids; folder ids put everything beneath them in scope, files added later included) is written replace-whole by `PUT /api/chats/[id]/attachments`, by chat creation (home/draft composer picks), and — for practice — by **inheritance**: a practice session started from picked propositions attaches the union of their **birth chats'** attachments. Deleting a library item lists every chat that uses it (direct or via an attached ancestor folder), detaches direct references, and leaves past messages untouched.
+
+**The turn.** `src/server/library-agent.ts` is the agent seam. Before a turn composes, the **materials gate** awaits a summary for every in-scope file (library-reader on the pdf-reader model slot, cached by content hash; failures are recorded and don't stall later turns — re-attaching retries). A chat with attachments gets the **COURSE MATERIALS** block appended to its system prompt and the `library_ls` / `library_read` / `library_search` / `library_view` tools (scoped to the chat's files, re-resolved per call), plus `library_brief` — a `pdf` job carrying `fileId` that the runner reads with the library reader — unless the pdf tool is toggled off. Chats without attachments get neither. Doctrine lives in `prompts/shared/35-course-materials.md`, `prober/20-…`, `teacher/60-…`, `practice/20-…`: lectures are the content, quizzes/tests/homework the goal (checked with fresh same-shape questions), answer keys stay sealed until the learner has answered.
+
+**Known gap.** Summary spend is recorded in each `summary.json` (`steps`), not in any chat's cost meter — summaries are library-global and shared across chats.
+
 ## 8. Process boundaries (the machine room)
 
 ```mermaid
@@ -497,6 +521,8 @@ Before 2026-10-02 the client discovered server-side change by polling: a lattice
 | `jobs-changed` | `{chatId}` | every job-store write (create/update/delete-that-removed) |
 | `activity-changed` | `{}` | extraction `setPhase`/`finishExtraction`; practice `registerRow`/phase-writes/`finishPractice` |
 | `chats-changed` | `{}` | list-shape writes only: chat create/rename/delete-that-removed |
+| `library-changed` | `{}` | every LibraryStore write (tree create/rename/move/tag/delete, file meta, summary write) and summary-service state flips (pending/failed) |
+| `library-summaries-changed` | `{chatId, running}` | the materials gate (`awaitAttachmentSummaries`) starting/finishing for a chat — the chat view's READING COURSE MATERIALS line |
 
 ### 10.3 Emitter laws
 
@@ -553,6 +579,9 @@ Every place the architecture is designed to be cut — the "one file" a future c
 | Push events | `src/core/events.ts` (bus) + `src/server/events-stream.ts` (SSE seam) + `components/server-events.tsx` (the window's EventSource) | change notification, end to end |
 | Agent construction (tests) | `handleChatRequest(req, buildAgent?)` | scripted engines, no refactor |
 | Sub-agent verification | `sub-agents/headless.ts` (`headlessOverride`) | demo/SVG verification, no Chrome |
+| Course-library reading | `src/agent/library/readable.ts` (`readUnits` / `searchUnits` / `viewUnits`) | how any library format is read, for tools and the reader alike |
+| Course-library scope + manifest + summaries | `src/server/library-agent.ts` | what a chat's agent sees of the library, and when the turn waits |
+| Office conversion | `src/agent/library/libreoffice.ts` (`sofficeOverride`) / `office-extract.ts` | LibreOffice vs. in-app OOXML extraction |
 | Data location (Electron) | `LH_DATA_DIR` env (`config.ts` PATHS) | where data/ lives, nothing else |
 | Desktop host | `electron/main.cjs` | launcher/security shell only |
 

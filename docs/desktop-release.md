@@ -1,10 +1,12 @@
 # Desktop builds and releases
 
+> **Fork build — Learnharness-FS (2026-10-29).** This fork ships as its own app: product name `Learnharness-FS` (its own data folder, so it never shares chats, graph, or keys with an installed official LearnHarness), app id `io.github.josh-torrez.learnharness-fs`, and updates from **josh-torrez/learnharness** releases. There is no Apple Developer ID: the Mac app is **ad-hoc signed and not notarized** (first launch: right-click → Open, or System Settings → Privacy & Security → Open Anyway), and because Squirrel.Mac only installs updates into a Developer-ID-signed app, **the Mac updater is off** — install new versions from the `.dmg`. Windows (and Linux) update in-app from the fork's releases. Where the text below mentions signing, notarization, or the macOS secrets, it describes the upstream setup this fork no longer uses.
+
 ## Platforms
 
 | Platform | Build runner | Packages | In-app update |
 |---|---|---|---|
-| macOS, Apple Silicon | `macos-26` (arm64) | signed/notarized DMG + ZIP | ZIP via Squirrel.Mac |
+| macOS, Apple Silicon | `macos-26` (arm64) | ad-hoc signed DMG + ZIP (fork) | off in the fork — install from the DMG |
 | Windows, x64 | `windows-2025` | unsigned per-user NSIS installer | NSIS |
 | Linux, x64 | `ubuntu-24.04` | AppImage + `.deb` | AppImage replacement; `.deb` through dpkg/apt with elevation if needed |
 
@@ -27,7 +29,7 @@ Each OS installs its own dependencies and builds its own Next standalone tree:
 
 The shell/updater live in `app.asar`; the standalone server and native renderer binaries ship unpacked as `extraResources`. **Do not cross-build the server payload.** Next traces the build machine's native binaries, so a macOS-built standalone tree is not a Windows/Linux payload.
 
-`npm run desktop:dist` remains the local macOS signing path, using the `LH_NOTARY` keychain profile. For a local Windows/Linux build, run steps 1–5 above, then:
+`npm run desktop:dist` is the local macOS build: an ad-hoc signed, un-notarized `dist/Learnharness-FS-<version>-arm64.dmg` (needs macOS 26+ and Xcode 26+ for the Icon Composer icon). For a local Windows/Linux build, run steps 1–5 above, then:
 
 ```sh
 # On Windows:
@@ -74,7 +76,7 @@ The job only reads (release list + asset downloads); it never creates, edits, pu
 
 ## macOS CI secrets
 
-Add these under repository **Settings → Secrets and variables → Actions**:
+**Not used by this fork** — the release workflow packages the Mac app ad-hoc signed with no secrets. The upstream setup, kept for reference — add these under repository **Settings → Secrets and variables → Actions**:
 
 | Secret | Value |
 |---|---|
