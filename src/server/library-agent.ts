@@ -16,7 +16,6 @@ import { resolveRoleSpec } from "../core/settings-resolution.ts";
 import { piEngineForSpec } from "../agent/models.ts";
 import { unitLabel, type LibraryReadable } from "../agent/library/readable.ts";
 import { runLibraryReader } from "../agent/subagents/library-reader.ts";
-import { withBgLlmSlot } from "../agent/subagents/bg-llm-semaphore.ts";
 import { providerKeyPresent } from "./keys.ts";
 import { processLibraryFile, readExtracted, summaryStatusOverride } from "./library.ts";
 
@@ -136,9 +135,7 @@ async function writeSummary(file: LibraryReadable): Promise<{ text: string; mode
 	if (!providerKeyPresent(spec.provider)) throw new Error(`No API key for ${spec.provider} (document reading model)`);
 	const engine = piEngineForSpec(spec);
 	const steps: CallUsage[] = [];
-	const result = await withBgLlmSlot(undefined, () =>
-		runLibraryReader(file, "summary", "", { engine, onUsage: (u) => steps.push(toCallUsage(u)) }),
-	);
+	const result = await runLibraryReader(file, "summary", "", { engine, onUsage: (u) => steps.push(toCallUsage(u)) });
 	if (result.failed) throw new Error(result.text.replace(/^Reading failed:\s*/i, ""));
 	return { text: result.text, model: `${engine.model.provider}:${engine.model.id}`, steps };
 }
