@@ -43,10 +43,10 @@ export interface ChatRecord {
 	extractions?: ExtractionRunUsage[];
 	/** Per-chat model/thinking overrides for the conversation agents. */
 	settings?: ChatSettings;
-	/** Course-library attachments (course library wave, 2026-10-29): ids
-	 *  of library folders/files in this chat's scope, in attach order.
-	 *  Absent = none (no migration). Folder ids put every file beneath
-	 *  them in scope (contracts/library.ts resolveAttachmentFiles). */
+	/** Course-library attachments: ids of library folders/files in this
+	 *  chat's scope, in attach order. Absent = none (no migration). Folder
+	 *  ids put every file beneath them in scope (contracts/library.ts
+	 *  resolveAttachmentFiles). */
 	attachments?: string[];
 	/** Durable clarification threads. Each explanation and associated check
 	 * shares one thread. Every main request appends new raw exchanges across
