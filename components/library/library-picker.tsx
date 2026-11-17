@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronRightIcon, LibraryIcon } from "lucide-react";
 import { useBackdropDismiss } from "@/components/backdrop-dismiss";
-import { isRowControlClick } from "@/components/source-folder-tree";
+import { isRowControlClick } from "@/components/library/library-folder-tree";
 import { Button } from "@/components/ui/button";
 import { libraryChildren, type LibraryItem } from "@/src/core";
 import { useLibrary } from "./library-client";

@@ -5,6 +5,7 @@ import { LIBRARY_TAG_LABELS } from "../../core/contracts.ts";
 import type { PiEngine } from "../models.ts";
 import { getHeadless, type HeadlessApi } from "./headless.ts";
 import { streamOnce } from "./pdf-reader.ts";
+import { workerRequestStream } from "../worker-request-admission.ts";
 import { readUnits, searchUnits, unitLabel, viewUnits, type LibraryReadable, type ViewedImage } from "../library/readable.ts";
 
 /**
@@ -107,6 +108,8 @@ export async function runLibraryReader(
 ): Promise<LibraryReaderResult> {
 	const headless = opts.headless ?? getHeadless();
 	const engine = opts.engine;
+	// Every sub-agent model call goes through the shared worker-request pool.
+	const admitted = { ...engine, streamFn: workerRequestStream(engine.streamFn) };
 	const maxIterations = opts.maxIterations ?? (mode === "summary" ? 8 : 14);
 	const tools = declarations(file);
 	const sessionId = randomUUID();
@@ -122,7 +125,7 @@ export async function runLibraryReader(
 
 	try {
 		for (let iteration = 0; iteration < maxIterations; iteration++) {
-			const result = await streamOnce(engine, instructions, messages, tools, sessionId, engine.level, opts.abortSignal);
+			const result = await streamOnce(admitted, instructions, messages, tools, sessionId, engine.level, opts.abortSignal);
 			opts.onUsage?.(result.usage);
 			messages = [...messages, result];
 			const calls = result.content.filter((c): c is Extract<typeof c, { type: "toolCall" }> => c.type === "toolCall");

@@ -5,7 +5,7 @@ import { LIBRARY_TAG_LABELS } from "../../core/contracts.ts";
 import { serverExecute, type ImageFileResult } from "../tool-execute.ts";
 import { getHeadless, type HeadlessApi } from "../subagents/headless.ts";
 import { readUnits, searchUnits, unitLabel, viewUnits, type LibraryReadable } from "../library/readable.ts";
-import { dispatchJob, PDF_ACK, type JobToolContext } from "./jobs.ts";
+import { dispatch, PDF_ACK, type JobToolContext } from "./jobs.ts";
 
 /**
  * THE COURSE-LIBRARY TOOLS (course library wave, 2026-10-29): direct,
@@ -173,7 +173,7 @@ export function libraryTools(ctx: LibraryToolContext): Record<string, AgentTool<
 			execute: serverExecute("library_brief", briefInput, ({ file, question }, { toolCallId }) => {
 				const resolved = resolveFile(ctx.files(), file);
 				if (typeof resolved === "string") return resolved;
-				return dispatchJob(jobs, "pdf", toolCallId, PDF_ACK, { path: resolved.path, question, fileId: resolved.id });
+				return dispatch(jobs, "pdf", toolCallId, PDF_ACK, { path: resolved.path, question, fileId: resolved.id });
 			}),
 		};
 	}

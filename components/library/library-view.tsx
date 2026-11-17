@@ -7,7 +7,8 @@ import { TopBar } from "@/components/top-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useBackdropDismiss } from "@/components/backdrop-dismiss";
-import { EditableSourceName, isRowControlClick, rowClickMode, SourceDragRow, SourceFolderTree, sourceNameMatches, type OrganizationChange, type RowClickMode } from "@/components/source-folder-tree";
+import { EditableSourceName, SourceDragRow, sourceNameMatches, type OrganizationChange } from "@/components/source-folder-tree";
+import { isRowControlClick, LibraryFolderTree, rowClickMode, type RowClickMode } from "@/components/library/library-folder-tree";
 import type { ChainSort, ChainSortCol } from "@/components/chain-table";
 import {
 	LIBRARY_TAG_LABELS,
@@ -45,7 +46,7 @@ const openFile = (id: string) => window.open(fileContentUrl(id), "_blank", "noop
 
 /**
  * THE LIBRARY PAGE (course library wave; owner ruling 2026-11-03: built on
- * main's SourceFolderTree, reused as-is through library-tree.ts). One
+ * the library's own copy of upstream's SourceFolderTree (library-folder-tree.tsx), fed by library-tree.ts). One
  * indented tree like the Chains table — folder rows are main's own
  * (checkbox, expand, inline rename, file count, date, drag to move); file
  * rows are lean (checkbox, icon, inline rename, pages/size, status, tag).
@@ -427,7 +428,7 @@ export function LibraryView() {
 	);
 }
 
-// ─── The tree (main's SourceFolderTree + library file rows) ──────────────────
+// ─── The tree (LibraryFolderTree + library file rows) ─────────────────────────
 
 /** Pure over props — render pins cover it. */
 export function LibraryTree({
@@ -463,7 +464,7 @@ export function LibraryTree({
 	onAction?: OrganizationChange;
 }) {
 	return (
-		<SourceFolderTree
+		<LibraryFolderTree
 			groups={files}
 			directory={directory}
 			query={query}
