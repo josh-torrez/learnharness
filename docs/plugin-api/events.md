@@ -59,6 +59,11 @@ export interface ServerEvents {
         chatId: string;
         running: boolean;
     };
+    "library-changed": Record<string, never>;
+    "library-summaries-changed": {
+        chatId: string;
+        running: boolean;
+    };
     "side-chats-changed": {
         chatId: string;
     };
@@ -88,6 +93,10 @@ export interface ServerEvents {
 - ["compaction-changed"](#serverevents-compaction-changed)
 - ["compaction-changed".chatId](#serverevents-compaction-changedchatid)
 - ["compaction-changed".running](#serverevents-compaction-changedrunning)
+- ["library-changed"](#serverevents-library-changed)
+- ["library-summaries-changed"](#serverevents-library-summaries-changed)
+- ["library-summaries-changed".chatId](#serverevents-library-summaries-changedchatid)
+- ["library-summaries-changed".running](#serverevents-library-summaries-changedrunning)
 - ["side-chats-changed"](#serverevents-side-chats-changed)
 - ["side-chats-changed".chatId](#serverevents-side-chats-changedchatid)
 - ["plugins-changed"](#serverevents-plugins-changed)
@@ -217,6 +226,40 @@ chatId: string;
 ```
 
 ### ServerEvents "compaction-changed".running
+
+```ts
+running: boolean;
+```
+
+### ServerEvents "library-changed"
+
+The course library changed — tree shape (create, rename, move, tag,
+delete) or a file's processing/summary state. Library views refetch.
+
+```ts
+"library-changed": Record<string, never>;
+```
+
+### ServerEvents "library-summaries-changed"
+
+Summaries for a chat's attachments started/finished generating.
+running=true is the turn-wait signal: the chat shows progress and
+the next turn waits server-side until every summary is ready.
+
+```ts
+"library-summaries-changed": {
+    chatId: string;
+    running: boolean;
+};
+```
+
+### ServerEvents "library-summaries-changed".chatId
+
+```ts
+chatId: string;
+```
+
+### ServerEvents "library-summaries-changed".running
 
 ```ts
 running: boolean;
