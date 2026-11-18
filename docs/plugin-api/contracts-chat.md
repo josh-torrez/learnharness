@@ -271,10 +271,10 @@ settings?: ChatSettings;
 
 ### ChatRecord attachments
 
-Course-library attachments (course library wave, 2026-10-29): ids
-of library folders/files in this chat's scope, in attach order.
-Absent = none (no migration). Folder ids put every file beneath
-them in scope (contracts/library.ts resolveAttachmentFiles).
+Course-library attachments: ids of library folders/files in this
+chat's scope, in attach order. Absent = none (no migration). Folder
+ids put every file beneath them in scope (contracts/library.ts
+resolveAttachmentFiles).
 
 ```ts
 attachments?: string[];
